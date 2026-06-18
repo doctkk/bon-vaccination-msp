@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Générateur Bon Vaccination — MSP Voves</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, 'Segoe UI', Arial, sans-serif; background: #f5f5f7; color: #333; line-height: 1.5; }
+  .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+
+  header { background: linear-gradient(135deg, #0F6E56, #0a4f3e); color: white; padding: 24px; border-radius: 12px; margin-bottom: 24px; box-shadow: 0 4px 12px rgba(15,110,86,0.25); }
+  header h1 { font-size: 24px; margin-bottom: 4px; }
+  header .subtitle { opacity: 0.92; font-size: 14px; }
+
+  .panel { background: white; padding: 24px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); margin-bottom: 20px; }
+  .panel h2 { color: #0F6E56; margin-bottom: 14px; font-size: 19px; padding-bottom: 8px; border-bottom: 2px solid #f0f0f0; }
+  .panel h3 { color: #555; margin: 14px 0 8px; font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px; }
+
+  .form-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 10px; }
+  .form-row.cols-2 { grid-template-columns: 1fr 1fr; }
+  @media (max-width: 700px) { .form-row, .form-row.cols-2 { grid-template-columns: 1fr; } }
+
+  .field label { display: block; font-weight: 600; margin-bottom: 4px; font-size: 12px; color: #555; }
+  .field label .req { color: #C00000; }
+  .field input, .field select, .field textarea { width: 100%; padding: 9px 11px; border: 1.5px solid #ddd; border-radius: 6px; font-size: 13px; font-family: inherit; }
+  .field input:focus, .field select:focus, .field textarea:focus { outline: none; border-color: #0F6E56; }
+
+  .preset-vaccines { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 14px; }
+  .preset-btn { padding: 6px 10px; background: #e6f5ef; color: #0F6E56; border: 1px solid #0F6E56; border-radius: 6px; font-size: 11px; cursor: pointer; font-weight: 600; }
+  .preset-btn:hover { background: #0F6E56; color: white; }
+
+  .btn { padding: 11px 20px; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 13px; transition: all 0.2s; display: inline-block; text-decoration: none; }
+  .btn-primary { background: #0F6E56; color: white; }
+  .btn-primary:hover { background: #0a4f3e; }
+  .btn-secondary { background: #1F4E79; color: white; }
+  .btn-success { background: #ED7D31; color: white; }
+  .btn-danger { background: white; color: #C00000; border: 2px solid #C00000; }
+  .actions { display: flex; gap: 10px; margin-top: 14px; flex-wrap: wrap; }
+
+  .alert { padding: 12px 16px; border-radius: 8px; margin: 10px 0; font-size: 13px; }
+  .alert-info { background: #d1ecf1; color: #0c5460; border-left: 4px solid #1F4E79; }
+  .alert-success { background: #d4f4dd; color: #155724; border-left: 4px solid #0F6E56; }
+  .alert-warning { background: #fff3cd; color: #856404; border-left: 4px solid #ED7D31; }
+
+  /* PRÉVISUALISATION DU BON A6 */
+  .bons-zone { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  @media (max-width: 700px) { .bons-zone { grid-template-columns: 1fr; } }
+
+  .bon-a6 {
+    width: 105mm;
+    height: 148mm;
+    background: white;
+    border: 1px solid #ddd;
+    padding: 6mm;
+    position: relative;
+    page-break-inside: avoid;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    overflow: hidden;
+    margin: 0 auto;
+  }
+  .bon-a6::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 5mm;
+    background: linear-gradient(90deg, #0F6E56, #14a679, #0F6E56);
+  }
+  .bon-header { margin-top: 4mm; text-align: center; padding-bottom: 3mm; border-bottom: 1.5px solid #0F6E56; }
+  .bon-header .msp { font-size: 8pt; color: #555; font-weight: 600; }
+  .bon-header .msp-sub { font-size: 7pt; color: #888; }
+  .bon-header h1 { font-size: 13pt; color: #0F6E56; margin-top: 1mm; }
+  .bon-header .legal { font-size: 6.5pt; color: #888; font-style: italic; margin-top: 1mm; }
+
+  .bon-body { display: flex; gap: 3mm; padding: 3mm 0; }
+  .bon-info { flex: 1; }
+  .bon-info .row { display: flex; align-items: baseline; margin-bottom: 2mm; font-size: 9pt; }
+  .bon-info .row .label { font-size: 7pt; font-weight: 700; color: #666; text-transform: uppercase; min-width: 22mm; }
+  .bon-info .row .value { font-weight: 700; color: #0F6E56; font-size: 10pt; }
+  .bon-info .vaccin-box {
+    background: #e6f5ef;
+    padding: 3mm;
+    border-radius: 2mm;
+    border-left: 3px solid #0F6E56;
+    margin: 2mm 0;
+  }
+  .bon-info .vaccin-box .label { font-size: 7pt; color: #0F6E56; font-weight: 700; text-transform: uppercase; }
+  .bon-info .vaccin-box .value { font-size: 12pt; font-weight: 700; color: #0F6E56; margin-top: 1mm; }
+
+  .bon-qr { display: flex; flex-direction: column; align-items: center; gap: 2mm; }
+  .bon-qr .qr-canvas { padding: 1.5mm; background: white; border: 1.5px solid #0F6E56; border-radius: 1.5mm; }
+  .bon-qr .qr-label { font-size: 6.5pt; color: #0F6E56; font-weight: 700; text-align: center; line-height: 1.2; }
+
+  .bon-footer {
+    position: absolute;
+    bottom: 4mm; left: 6mm; right: 6mm;
+    border-top: 1px dashed #ccc;
+    padding-top: 2mm;
+  }
+  .bon-footer .ide-section { font-size: 7.5pt; color: #555; line-height: 1.4; }
+  .bon-footer .ide-section strong { color: #0F6E56; }
+  .bon-footer .signature { display: flex; justify-content: space-between; margin-top: 2mm; font-size: 6.5pt; color: #888; }
+
+  .scissors { position: absolute; top: -10mm; right: -8mm; font-size: 14pt; color: #999; opacity: 0; }
+
+  /* HISTORIQUE */
+  .history-table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 12px; }
+  .history-table th { background: #0F6E56; color: white; padding: 8px; text-align: left; font-weight: 600; }
+  .history-table td { padding: 7px; border-bottom: 1px solid #eee; }
+  .history-table .delete-btn { background: none; border: none; color: #C00000; cursor: pointer; font-size: 14px; }
+
+  .empty-state { text-align: center; padding: 30px 20px; color: #999; }
+
+  /* PRINT CSS */
+  @media print {
+    body { background: white; padding: 0; }
+    .no-print { display: none !important; }
+    .container { max-width: none; padding: 0; }
+    .bons-zone { display: block; }
+    .bon-a6 {
+      box-shadow: none;
+      border: 1px dashed #999;
+      margin: 0 auto 10mm;
+      page-break-inside: avoid;
+    }
+    @page { size: A4; margin: 8mm; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+<header class="no-print">
+  <h1>💉 Générateur Bon Vaccination — MSP Voves</h1>
+  <div class="subtitle">Édition d'un bon A6 avec QR pré-rempli pour l'IDE Asalée • Pont Axisanté ↔ Forms Vaccination</div>
+</header>
+
+<div class="alert alert-info no-print">
+  <strong>📋 Mode d'emploi :</strong> à la prescription d'un vaccin, remplissez le formulaire ci-dessous (30 sec), cliquez « Générer le bon », imprimez (1 bon A6 ou 2 par page A4). Donnez le bon au patient. L'IDE scanne le QR au moment de la réalisation → le formulaire Forms s'ouvre avec les champs identifiants pré-remplis.
+</div>
+
+<!-- FORMULAIRE DE SAISIE -->
+<div class="panel no-print">
+  <h2>✏️ Nouveau bon vaccination</h2>
+
+  <h3>1. Patient</h3>
+  <div class="form-row">
+    <div class="field">
+      <label>Initiales (3 lettres) <span class="req">*</span></label>
+      <input type="text" id="initiales" maxlength="5" placeholder="DUR" required>
+    </div>
+    <div class="field">
+      <label>Date de naissance <span class="req">*</span></label>
+      <input type="date" id="naissance" required>
+    </div>
+    <div class="field">
+      <label>Sexe</label>
+      <select id="sexe">
+        <option value="">— Choisir —</option>
+        <option>Femme</option>
+        <option>Homme</option>
+      </select>
+    </div>
+  </div>
+
+  <h3>2. Vaccin prescrit</h3>
+  <div class="preset-vaccines">
+    <button class="preset-btn" onclick="setVaccine('Prevenar 20 (pneumocoque)', 'ALD8 diabète / ALD23 BPCO / ≥ 65 ans / immunodéprimé')">Prevenar 20</button>
+    <button class="preset-btn" onclick="setVaccine('Grippe saisonnière 2026', '≥ 65 ans / ALD / grossesse / professionnel santé')">Grippe 2026</button>
+    <button class="preset-btn" onclick="setVaccine('Pneumocoque PPV23', 'Rappel après Prevenar 20 (8 sem)')">PPV23</button>
+    <button class="preset-btn" onclick="setVaccine('dTP (Revaxis)', 'Rappel décennal adulte')">dTP Revaxis</button>
+    <button class="preset-btn" onclick="setVaccine('dTcaP (Boostrixtetra)', 'Rappel + coqueluche entourage nouveau-né')">dTcaP</button>
+    <button class="preset-btn" onclick="setVaccine('COVID-19 (Spikevax / Comirnaty)', '≥ 65 ans / immunodéprimé / ALD')">COVID-19</button>
+    <button class="preset-btn" onclick="setVaccine('Zostavax / Shingrix', '≥ 65 ans (Shingrix : immunodéprimé)')">Zona</button>
+    <button class="preset-btn" onclick="setVaccine('HPV Gardasil 9', 'Adolescent 11-14 ans (rattrapage 15-19)')">HPV</button>
+    <button class="preset-btn" onclick="setVaccine('Méningocoque ACWY', 'Adolescent 11-14 ans (loi 2024)')">Méningo ACWY</button>
+    <button class="preset-btn" onclick="setVaccine('Méningocoque B', 'Nourrisson + adolescent (loi 2024)')">Méningo B</button>
+    <button class="preset-btn" onclick="setVaccine('ROR', 'Rattrapage adulte non vacciné')">ROR</button>
+    <button class="preset-btn" onclick="setVaccine('Hépatite B', 'Professionnel santé / patient à risque')">Hépatite B</button>
+  </div>
+
+  <div class="form-row cols-2">
+    <div class="field">
+      <label>Vaccin prescrit <span class="req">*</span></label>
+      <input type="text" id="vaccin" placeholder="Ex : Prevenar 20" required>
+    </div>
+    <div class="field">
+      <label>Indication / motif</label>
+      <input type="text" id="indication" placeholder="Ex : ALD8 diabète, ≥ 65 ans">
+    </div>
+  </div>
+
+  <div class="form-row">
+    <div class="field">
+      <label>Lot vaccin (si déjà commandé)</label>
+      <input type="text" id="lot" placeholder="Ex : Lot HM342 / EXP 03-2027">
+    </div>
+    <div class="field">
+      <label>Voie</label>
+      <select id="voie">
+        <option value="">— Choisir —</option>
+        <option>IM deltoïde</option>
+        <option>IM face antéro-latérale cuisse</option>
+        <option>SC</option>
+        <option>Intra-dermique</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Site d'injection</label>
+      <select id="site">
+        <option value="">— Choisir —</option>
+        <option>Bras gauche</option>
+        <option>Bras droit</option>
+        <option>Cuisse gauche</option>
+        <option>Cuisse droite</option>
+      </select>
+    </div>
+  </div>
+
+  <h3>3. Prescripteur</h3>
+  <div class="form-row">
+    <div class="field">
+      <label>MG prescripteur <span class="req">*</span></label>
+      <select id="medecin" required>
+        <option value="">— Choisir —</option>
+        <option>Dr Ten Ket Kian</option>
+        <option>Dr Caillault</option>
+        <option>Dr Rivoal</option>
+        <option>Dr Forestier</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Date prescription <span class="req">*</span></label>
+      <input type="date" id="date_presc" required>
+    </div>
+    <div class="field">
+      <label>Validité du bon</label>
+      <select id="validite">
+        <option value="30">30 jours (standard)</option>
+        <option value="60">60 jours</option>
+        <option value="90">90 jours</option>
+        <option value="180">180 jours (campagne saisonnière)</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="actions">
+    <button class="btn btn-primary" onclick="genererBon()">💾 Générer le bon (+ aperçu)</button>
+    <button class="btn btn-success" onclick="window.print()">🖨 Imprimer le(s) bon(s) affiché(s)</button>
+    <button class="btn btn-danger" onclick="resetForm()">Effacer le formulaire</button>
+  </div>
+</div>
+
+<!-- CONFIG URL PRÉ-REMPLIE -->
+<div class="panel no-print" style="background: linear-gradient(135deg, #f8f8f8, #fff);">
+  <h2 style="font-size: 16px;">⚙️ Configuration de l'URL Forms pré-remplie</h2>
+  <p style="color:#666; font-size: 12px; margin-bottom: 10px;">
+    Pour activer le pré-remplissage automatique des champs du Forms : ouvrez Forms Vaccination → Aperçu → remplissez les champs identifiants avec les placeholders <code>__INITIALES__</code>, <code>__DDN__</code>, <code>__VACCIN__</code>, <code>__INDICATION__</code>, <code>__LOT__</code>, <code>__DATE_PRESC__</code>, <code>__MEDECIN__</code> → bouton « Obtenir un lien pré-rempli » → collez l'URL ici :
+  </p>
+  <div class="field">
+    <label>URL Forms (par défaut : Forms Vaccination MSP)</label>
+    <input type="text" id="forms_url" value="https://forms.office.com/r/Ri3j9V5ZA9" style="font-family: monospace; font-size: 11px;">
+  </div>
+  <div class="alert alert-warning" style="margin-top: 8px;">
+    💡 Tant que vous n'avez pas généré le lien pré-rempli, le QR pointe simplement vers le Forms standard. Le bon papier porte alors toutes les infos patient pour saisie rapide IDE (15 secondes).
+  </div>
+</div>
+
+<!-- APERÇU DES BONS -->
+<div class="panel">
+  <h2 class="no-print">📄 Aperçu du / des bon(s) à imprimer</h2>
+  <div id="bons-container" class="bons-zone">
+    <div class="empty-state no-print">
+      Remplissez le formulaire ci-dessus et cliquez « Générer le bon » pour voir l'aperçu A6 ici.<br>
+      <small>Vous pouvez générer plusieurs bons et les imprimer en série (2 par page A4).</small>
+    </div>
+  </div>
+  <div class="actions no-print" id="actions-print" style="display:none;">
+    <button class="btn btn-success" onclick="window.print()">🖨 Imprimer maintenant</button>
+    <button class="btn btn-danger" onclick="clearBons()">🗑 Vider l'aperçu</button>
+  </div>
+</div>
+
+<!-- HISTORIQUE -->
+<div class="panel no-print">
+  <h2>📚 Historique des bons générés (<span id="count">0</span>)</h2>
+  <div id="history-content">
+    <div class="empty-state">Aucun bon généré aujourd'hui.</div>
+  </div>
+  <div class="actions">
+    <button class="btn btn-secondary" onclick="exportCSV()">📥 Exporter en CSV</button>
+    <button class="btn btn-danger" onclick="clearHistory()">🗑 Vider l'historique</button>
+  </div>
+</div>
+
+<div class="alert alert-success no-print" style="margin-top: 20px;">
+  <strong>🔐 Confidentialité :</strong> les données saisies restent localement dans votre navigateur (localStorage). Aucune transmission vers Internet hormis l'envoi du QR vers Microsoft Forms (Europe, RGPD). Le bon papier ne contient que les initiales (anonymisation).
+</div>
+
+</div>
+
+<script>
+const STORAGE_KEY = 'msp_voves_bons_vaccination';
+
+// === PRESET VACCINES ===
+function setVaccine(nom, indication) {
+  document.getElementById('vaccin').value = nom;
+  if (!document.getElementById('indication').value) {
+    document.getElementById('indication').value = indication;
+  }
+  // Auto voie selon vaccin
+  const voie = document.getElementById('voie');
+  if (!voie.value) {
+    if (nom.includes('ROR') || nom.includes('Zostavax')) voie.value = 'SC';
+    else voie.value = 'IM deltoïde';
+  }
+}
+
+// === CALCUL ÂGE ===
+function calcAge(ddn) {
+  if (!ddn) return '';
+  const d = new Date(ddn);
+  const now = new Date();
+  let age = now.getFullYear() - d.getFullYear();
+  if (now.getMonth() < d.getMonth() || (now.getMonth() === d.getMonth() && now.getDate() < d.getDate())) age--;
+  return age;
+}
+
+// === GÉNÉRER URL PRÉ-REMPLIE ===
+function buildPrefilledUrl(data) {
+  let url = document.getElementById('forms_url').value || 'https://forms.office.com/r/Ri3j9V5ZA9';
+  url = url.replace(/__INITIALES__/g, encodeURIComponent(data.initiales))
+           .replace(/__DDN__/g, encodeURIComponent(data.naissance))
+           .replace(/__VACCIN__/g, encodeURIComponent(data.vaccin))
+           .replace(/__INDICATION__/g, encodeURIComponent(data.indication || ''))
+           .replace(/__LOT__/g, encodeURIComponent(data.lot || ''))
+           .replace(/__DATE_PRESC__/g, encodeURIComponent(data.date_presc))
+           .replace(/__MEDECIN__/g, encodeURIComponent(data.medecin));
+  return url;
+}
+
+// === GÉNÉRER UN BON ===
+function genererBon() {
+  // Validation
+  const data = {
+    id: Date.now(),
+    initiales: document.getElementById('initiales').value.toUpperCase().trim(),
+    naissance: document.getElementById('naissance').value,
+    sexe: document.getElementById('sexe').value,
+    vaccin: document.getElementById('vaccin').value.trim(),
+    indication: document.getElementById('indication').value.trim(),
+    lot: document.getElementById('lot').value.trim(),
+    voie: document.getElementById('voie').value,
+    site: document.getElementById('site').value,
+    medecin: document.getElementById('medecin').value,
+    date_presc: document.getElementById('date_presc').value,
+    validite: document.getElementById('validite').value,
+    cree_le: new Date().toLocaleString('fr-FR')
+  };
+
+  if (!data.initiales || !data.naissance || !data.vaccin || !data.medecin || !data.date_presc) {
+    alert('Champs obligatoires manquants : Initiales, Date de naissance, Vaccin, MG prescripteur, Date prescription.');
+    return;
+  }
+
+  // Stocker
+  const history = getHistory();
+  history.push(data);
+  setHistory(history);
+
+  // Afficher le bon
+  renderBon(data);
+
+  // Reset formulaire patient (mais garder MG + date pour saisies suivantes)
+  document.getElementById('initiales').value = '';
+  document.getElementById('naissance').value = '';
+  document.getElementById('sexe').value = '';
+  document.getElementById('vaccin').value = '';
+  document.getElementById('indication').value = '';
+  document.getElementById('lot').value = '';
+  document.getElementById('initiales').focus();
+
+  document.getElementById('actions-print').style.display = 'flex';
+}
+
+function renderBon(data) {
+  const container = document.getElementById('bons-container');
+  // Si état vide, nettoyer
+  if (container.querySelector('.empty-state')) container.innerHTML = '';
+
+  const age = calcAge(data.naissance);
+  const ddnFr = data.naissance ? new Date(data.naissance).toLocaleDateString('fr-FR') : '';
+  const datePrescFr = data.date_presc ? new Date(data.date_presc).toLocaleDateString('fr-FR') : '';
+  const dateLimite = new Date(data.date_presc);
+  dateLimite.setDate(dateLimite.getDate() + parseInt(data.validite || 30));
+  const dateLimiteFr = dateLimite.toLocaleDateString('fr-FR');
+
+  const url = buildPrefilledUrl(data);
+
+  const bonId = 'bon-' + data.id;
+  const qrId = 'qr-' + data.id;
+
+  const bonHtml = `
+    <div class="bon-a6" id="${bonId}">
+      <div class="bon-header">
+        <div class="msp">MAISON DE SANTÉ PLURIDISCIPLINAIRE</div>
+        <div class="msp-sub">DES VILLAGES VOVÉENS — 12 rue de Châteaudun, 28150</div>
+        <h1>💉 BON DE VACCINATION</h1>
+        <div class="legal">Décret 2023-736 — IDE Asalée habilitée à l'administration</div>
+      </div>
+
+      <div class="bon-body">
+        <div class="bon-info">
+          <div class="row"><span class="label">Patient</span><span class="value">${data.initiales}</span></div>
+          <div class="row"><span class="label">Né(e) le</span><span class="value">${ddnFr} <span style="font-weight:400; color:#666;">(${age} ans)</span></span></div>
+          ${data.sexe ? `<div class="row"><span class="label">Sexe</span><span class="value">${data.sexe}</span></div>` : ''}
+
+          <div class="vaccin-box">
+            <div class="label">Vaccin à administrer</div>
+            <div class="value">${data.vaccin}</div>
+            ${data.indication ? `<div style="font-size: 7.5pt; color: #555; margin-top: 1mm;"><strong>Indication :</strong> ${data.indication}</div>` : ''}
+          </div>
+
+          ${data.lot ? `<div class="row"><span class="label">Lot prévu</span><span class="value" style="font-size: 8.5pt;">${data.lot}</span></div>` : ''}
+          ${data.voie ? `<div class="row"><span class="label">Voie</span><span class="value" style="font-size: 8.5pt;">${data.voie}</span></div>` : ''}
+          ${data.site ? `<div class="row"><span class="label">Site</span><span class="value" style="font-size: 8.5pt;">${data.site}</span></div>` : ''}
+        </div>
+
+        <div class="bon-qr">
+          <div class="qr-canvas" id="${qrId}"></div>
+          <div class="qr-label">📱 SCANNER<br>IDE Asalée</div>
+        </div>
+      </div>
+
+      <div class="bon-footer">
+        <div class="ide-section">
+          <strong>Prescrit par :</strong> ${data.medecin} — le ${datePrescFr}<br>
+          <strong>Valide jusqu'au :</strong> ${dateLimiteFr} (${data.validite} j)<br>
+          <strong>Action IDE :</strong> scanner le QR → remplir le formulaire après réalisation
+        </div>
+        <div class="signature">
+          <span>Réalisé le : ___/___/____ </span>
+          <span>Signature IDE : _______</span>
+        </div>
+      </div>
+    </div>
+  `;
+
+  container.insertAdjacentHTML('beforeend', bonHtml);
+
+  // Générer le QR
+  setTimeout(() => {
+    new QRCode(document.getElementById(qrId), {
+      text: url,
+      width: 110,
+      height: 110,
+      colorDark: '#0F6E56',
+      colorLight: '#ffffff',
+      correctLevel: QRCode.CorrectLevel.H
+    });
+  }, 50);
+
+  renderHistory();
+}
+
+function clearBons() {
+  document.getElementById('bons-container').innerHTML = '<div class="empty-state no-print">Remplissez le formulaire ci-dessus et cliquez « Générer le bon » pour voir l\'aperçu A6 ici.</div>';
+  document.getElementById('actions-print').style.display = 'none';
+}
+
+function resetForm() {
+  ['initiales', 'naissance', 'sexe', 'vaccin', 'indication', 'lot', 'voie', 'site', 'medecin'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('date_presc').value = new Date().toISOString().slice(0,10);
+}
+
+// === HISTORIQUE ===
+function getHistory() { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); }
+function setHistory(arr) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(arr));
+  document.getElementById('count').textContent = arr.length;
+}
+
+function renderHistory() {
+  const history = getHistory();
+  document.getElementById('count').textContent = history.length;
+  const c = document.getElementById('history-content');
+  if (history.length === 0) { c.innerHTML = '<div class="empty-state">Aucun bon généré.</div>'; return; }
+  let html = '<table class="history-table"><thead><tr><th>Créé le</th><th>Patient</th><th>Vaccin</th><th>MG</th><th>Date presc</th><th>Indication</th><th></th></tr></thead><tbody>';
+  history.slice().reverse().forEach(b => {
+    html += `<tr>
+      <td style="font-size:11px;">${b.cree_le}</td>
+      <td><strong>${b.initiales}</strong> (${calcAge(b.naissance)} ans)</td>
+      <td>${b.vaccin}</td>
+      <td>${b.medecin}</td>
+      <td>${b.date_presc ? new Date(b.date_presc).toLocaleDateString('fr-FR') : '-'}</td>
+      <td style="font-size:11px;">${b.indication || '-'}</td>
+      <td><button class="delete-btn" onclick="reprintBon(${b.id})">🖨 Réimprimer</button></td>
+    </tr>`;
+  });
+  html += '</tbody></table>';
+  c.innerHTML = html;
+}
+
+function reprintBon(id) {
+  const history = getHistory();
+  const bon = history.find(b => b.id === id);
+  if (!bon) return;
+  // Ne pas re-stocker, juste afficher
+  renderBon(bon);
+  // Retirer le dernier ajout (puisque renderBon n'ajoute pas à l'historique mais que genererBon le ferait)
+  document.getElementById('actions-print').style.display = 'flex';
+  window.scrollTo({ top: document.getElementById('bons-container').offsetTop, behavior: 'smooth' });
+}
+
+function clearHistory() {
+  if (!confirm('Effacer l\'historique des bons ?')) return;
+  localStorage.removeItem(STORAGE_KEY);
+  renderHistory();
+}
+
+function exportCSV() {
+  const history = getHistory();
+  if (history.length === 0) { alert('Aucun bon à exporter.'); return; }
+  const headers = ['Cree_le','Initiales','Date_naissance','Age','Sexe','Vaccin','Indication','Lot','Voie','Site','MG','Date_prescription','Validite_jours'];
+  let csv = headers.join(';') + '\n';
+  history.forEach(b => {
+    csv += [b.cree_le, b.initiales, b.naissance, calcAge(b.naissance), b.sexe, b.vaccin, (b.indication||'').replace(/;/g,','), b.lot, b.voie, b.site, b.medecin, b.date_presc, b.validite].join(';') + '\n';
+  });
+  const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' });
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = 'Bons_Vaccination_MSP_Voves_' + new Date().toISOString().slice(0,10) + '.csv';
+  link.click();
+}
+
+// === INIT ===
+window.addEventListener('load', () => {
+  document.getElementById('date_presc').value = new Date().toISOString().slice(0,10);
+  renderHistory();
+
+  // === LECTURE DES PARAMETRES URL (pont Axisante) ===
+  // Si l'URL contient ?ini=DUR&ddn=1960-05-15&sexe=Homme&mt=Dr+Ten+Ket+Kian&ald=ALD8+diabete
+  // les champs du formulaire sont preremplis automatiquement
+  const params = new URLSearchParams(window.location.search);
+  const map = {
+    'ini': 'initiales',
+    'initiales': 'initiales',
+    'nom': 'initiales',
+    'ddn': 'naissance',
+    'naissance': 'naissance',
+    'datenaissance': 'naissance',
+    'sexe': 'sexe',
+    'vaccin': 'vaccin',
+    'indication': 'indication',
+    'ald': 'indication',
+    'lot': 'lot',
+    'voie': 'voie',
+    'site': 'site',
+    'mt': 'medecin',
+    'medecin': 'medecin',
+    'medecintraitant': 'medecin',
+    'date': 'date_presc',
+    'datepresc': 'date_presc'
+  };
+  let preremplis = 0;
+  params.forEach((value, key) => {
+    const targetId = map[key.toLowerCase()];
+    if (targetId) {
+      const el = document.getElementById(targetId);
+      if (el && value) {
+        el.value = value;
+        preremplis++;
+      }
+    }
+  });
+
+  // Si pré-remplissage detecté, afficher un bandeau et auto-scroll sur le formulaire
+  if (preremplis > 0) {
+    const banner = document.createElement('div');
+    banner.className = 'alert alert-success no-print';
+    banner.style.cssText = 'margin: 14px 0; font-size: 14px;';
+    banner.innerHTML = `<strong>✓ Pré-rempli depuis Axisanté :</strong> ${preremplis} champ(s) auto-rempli(s). Vérifiez, choisissez le vaccin et cliquez « Générer le bon » (Ctrl+Enter).`;
+    document.querySelector('.panel').insertBefore(banner, document.querySelector('.panel').firstChild);
+    // Focus sur le champ vaccin (le seul restant à choisir)
+    document.getElementById('vaccin').focus();
+  }
+
+  // Raccourci clavier : Ctrl+Enter pour générer
+  document.addEventListener('keydown', (e) => {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+      e.preventDefault();
+      genererBon();
+    }
+  });
+});
+</script>
+</body>
+</html>
