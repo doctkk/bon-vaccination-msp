@@ -539,61 +539,46 @@ window.addEventListener('load', () => {
   document.getElementById('date_presc').value = new Date().toISOString().slice(0,10);
   renderHistory();
 
-  // === LECTURE DES PARAMETRES URL (pont Axisante) ===
-  // Si l'URL contient ?ini=DUR&ddn=1960-05-15&sexe=Homme&mt=Dr+Ten+Ket+Kian&ald=ALD8+diabete
-  // les champs du formulaire sont preremplis automatiquement
-  const params = new URLSearchParams(window.location.search);
-  const map = {
-    'ini': 'initiales',
-    'initiales': 'initiales',
-    'nom': 'initiales',
-    'ddn': 'naissance',
-    'naissance': 'naissance',
-    'datenaissance': 'naissance',
-    'sexe': 'sexe',
-    'vaccin': 'vaccin',
-    'indication': 'indication',
-    'ald': 'indication',
-    'lot': 'lot',
-    'voie': 'voie',
-    'site': 'site',
-    'mt': 'medecin',
-    'medecin': 'medecin',
-    'medecintraitant': 'medecin',
-    'date': 'date_presc',
-    'datepresc': 'date_presc'
-  };
-  let preremplis = 0;
-  params.forEach((value, key) => {
-    const targetId = map[key.toLowerCase()];
-    if (targetId) {
-      const el = document.getElementById(targetId);
-      if (el && value) {
-        el.value = value;
-        preremplis++;
-      }
+  // === EXTRACTION INITIALES depuis nom complet ===
+  // "M. TEN KET KIAN Francois" -> "TKF" (initiales des mots du nom + 1ere lettre prenom)
+  // "DUPONT Jean Marie" -> "DJM"
+  // "Mme MARTIN Sophie" -> "MS"
+  function nomToInitiales(nom) {
+    if (!nom) return '';
+    const titres = /^(M\.|Mme|Mlle|Mr|Dr|Pr|Mme\.|Mr\.|Mlle\.)$/i;
+    const mots = nom.trim().split(/\s+/).filter(m => !titres.test(m));
+    if (mots.length === 0) return '';
+    let inits = '';
+    let nomDone = false;
+    for (const m of mots) {
+      const isMaj = m === m.toUpperCase() && m.length > 1;
+      if (isMaj) { inits += m[0]; }
+      else if (!nomDone && inits.length > 0) { inits += m[0]; nomDone = true; }
     }
-  });
-
-  // Si pré-remplissage detecté, afficher un bandeau et auto-scroll sur le formulaire
-  if (preremplis > 0) {
-    const banner = document.createElement('div');
-    banner.className = 'alert alert-success no-print';
-    banner.style.cssText = 'margin: 14px 0; font-size: 14px;';
-    banner.innerHTML = `<strong>✓ Pré-rempli depuis Axisanté :</strong> ${preremplis} champ(s) auto-rempli(s). Vérifiez, choisissez le vaccin et cliquez « Générer le bon » (Ctrl+Enter).`;
-    document.querySelector('.panel').insertBefore(banner, document.querySelector('.panel').firstChild);
-    // Focus sur le champ vaccin (le seul restant à choisir)
-    document.getElementById('vaccin').focus();
+    return inits.substring(0, 5).toUpperCase();
   }
 
-  // Raccourci clavier : Ctrl+Enter pour générer
-  document.addEventListener('keydown', (e) => {
-    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
-      e.preventDefault();
-      genererBon();
-    }
-  });
-});
-</script>
-</body>
-</html>
+  // === Bouton "Coller identite" via presse-papiers ===
+  async function collerIdentite() {
+    try {
+      const txt = await navigator.clipboard.readText();
+      if (!txt || txt.length < 3) {
+        alert('Presse-papiers vide ou trop court. Selectionnez le nom du patient dans Axisante puis Ctrl+C, puis recliquez ici.');
+        return;
+      }
+      // Extraction : on prend la 1ere ligne contenant le nom
+      const ligne1 = txt.split(/[\n\r]/)[0].trim();
+      const ini = nomToInitiales(ligne1);
+      if (ini) {
+        document.getElementById('initiales').value = ini;
+        const banner = document.createElement('div');
+        banner.className = 'alert alert-success no-print';
+        banner.style.cssText = 'margin: 8px 0; font-size: 13px;';
+        banner.innerHTML = `<strong>✓ Identite collee :</strong> "${ligne1}" -> initiales <strong>${ini}</strong>. Choisissez le vaccin et Ctrl+Enter.`;
+        const old = document.getElementById('paste-msg');
+        if (old) old.remove();
+        banner.id = 'paste-msg';
+        document.querySelector('.panel').insertBefore(banner, document.querySelector('.panel').firstChild);
+        document.getElementById('vaccin').focus();
+      } else {
+  
