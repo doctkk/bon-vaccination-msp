@@ -37,6 +37,8 @@
   .btn-secondary { background: #1F4E79; color: white; }
   .btn-success { background: #ED7D31; color: white; }
   .btn-danger { background: white; color: #C00000; border: 2px solid #C00000; }
+  .btn-paste { background: #7030A0; color: white; margin: 10px 0; padding: 12px 18px; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; }
+  .btn-paste:hover { background: #5a2480; }
   .actions { display: flex; gap: 10px; margin-top: 14px; flex-wrap: wrap; }
 
   .alert { padding: 12px 16px; border-radius: 8px; margin: 10px 0; font-size: 13px; }
@@ -44,27 +46,17 @@
   .alert-success { background: #d4f4dd; color: #155724; border-left: 4px solid #0F6E56; }
   .alert-warning { background: #fff3cd; color: #856404; border-left: 4px solid #ED7D31; }
 
-  /* PRÉVISUALISATION DU BON A6 */
   .bons-zone { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
   @media (max-width: 700px) { .bons-zone { grid-template-columns: 1fr; } }
 
   .bon-a6 {
-    width: 105mm;
-    height: 148mm;
-    background: white;
-    border: 1px solid #ddd;
-    padding: 6mm;
-    position: relative;
-    page-break-inside: avoid;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-    overflow: hidden;
-    margin: 0 auto;
+    width: 105mm; height: 148mm; background: white;
+    border: 1px solid #ddd; padding: 6mm; position: relative;
+    page-break-inside: avoid; box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    overflow: hidden; margin: 0 auto;
   }
   .bon-a6::before {
-    content: '';
-    position: absolute;
-    top: 0; left: 0; right: 0;
-    height: 5mm;
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 5mm;
     background: linear-gradient(90deg, #0F6E56, #14a679, #0F6E56);
   }
   .bon-header { margin-top: 4mm; text-align: center; padding-bottom: 3mm; border-bottom: 1.5px solid #0F6E56; }
@@ -79,11 +71,8 @@
   .bon-info .row .label { font-size: 7pt; font-weight: 700; color: #666; text-transform: uppercase; min-width: 22mm; }
   .bon-info .row .value { font-weight: 700; color: #0F6E56; font-size: 10pt; }
   .bon-info .vaccin-box {
-    background: #e6f5ef;
-    padding: 3mm;
-    border-radius: 2mm;
-    border-left: 3px solid #0F6E56;
-    margin: 2mm 0;
+    background: #e6f5ef; padding: 3mm; border-radius: 2mm;
+    border-left: 3px solid #0F6E56; margin: 2mm 0;
   }
   .bon-info .vaccin-box .label { font-size: 7pt; color: #0F6E56; font-weight: 700; text-transform: uppercase; }
   .bon-info .vaccin-box .value { font-size: 12pt; font-weight: 700; color: #0F6E56; margin-top: 1mm; }
@@ -93,18 +82,13 @@
   .bon-qr .qr-label { font-size: 6.5pt; color: #0F6E56; font-weight: 700; text-align: center; line-height: 1.2; }
 
   .bon-footer {
-    position: absolute;
-    bottom: 4mm; left: 6mm; right: 6mm;
-    border-top: 1px dashed #ccc;
-    padding-top: 2mm;
+    position: absolute; bottom: 4mm; left: 6mm; right: 6mm;
+    border-top: 1px dashed #ccc; padding-top: 2mm;
   }
   .bon-footer .ide-section { font-size: 7.5pt; color: #555; line-height: 1.4; }
   .bon-footer .ide-section strong { color: #0F6E56; }
   .bon-footer .signature { display: flex; justify-content: space-between; margin-top: 2mm; font-size: 6.5pt; color: #888; }
 
-  .scissors { position: absolute; top: -10mm; right: -8mm; font-size: 14pt; color: #999; opacity: 0; }
-
-  /* HISTORIQUE */
   .history-table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 12px; }
   .history-table th { background: #0F6E56; color: white; padding: 8px; text-align: left; font-weight: 600; }
   .history-table td { padding: 7px; border-bottom: 1px solid #eee; }
@@ -112,18 +96,12 @@
 
   .empty-state { text-align: center; padding: 30px 20px; color: #999; }
 
-  /* PRINT CSS */
   @media print {
     body { background: white; padding: 0; }
     .no-print { display: none !important; }
     .container { max-width: none; padding: 0; }
     .bons-zone { display: block; }
-    .bon-a6 {
-      box-shadow: none;
-      border: 1px dashed #999;
-      margin: 0 auto 10mm;
-      page-break-inside: avoid;
-    }
+    .bon-a6 { box-shadow: none; border: 1px dashed #999; margin: 0 auto 10mm; page-break-inside: avoid; }
     @page { size: A4; margin: 8mm; }
   }
 </style>
@@ -140,15 +118,16 @@
   <strong>📋 Mode d'emploi :</strong> à la prescription d'un vaccin, remplissez le formulaire ci-dessous (30 sec), cliquez « Générer le bon », imprimez (1 bon A6 ou 2 par page A4). Donnez le bon au patient. L'IDE scanne le QR au moment de la réalisation → le formulaire Forms s'ouvre avec les champs identifiants pré-remplis.
 </div>
 
-<!-- FORMULAIRE DE SAISIE -->
 <div class="panel no-print">
+  <button id="paste-btn" type="button" class="btn-paste" onclick="collerIdentite()">📋 Coller identité patient depuis Axisanté (Ctrl+C dans le dossier puis cliquer ici)</button>
+
   <h2>✏️ Nouveau bon vaccination</h2>
 
   <h3>1. Patient</h3>
   <div class="form-row">
     <div class="field">
       <label>Initiales (3 lettres) <span class="req">*</span></label>
-      <input type="text" id="initiales" maxlength="5" placeholder="DUR" required>
+      <input type="text" id="initiales" maxlength="10" placeholder="DUR" required>
     </div>
     <div class="field">
       <label>Date de naissance <span class="req">*</span></label>
@@ -252,7 +231,6 @@
   </div>
 </div>
 
-<!-- CONFIG URL PRÉ-REMPLIE -->
 <div class="panel no-print" style="background: linear-gradient(135deg, #f8f8f8, #fff);">
   <h2 style="font-size: 16px;">⚙️ Configuration de l'URL Forms pré-remplie</h2>
   <p style="color:#666; font-size: 12px; margin-bottom: 10px;">
@@ -262,12 +240,8 @@
     <label>URL Forms (par défaut : Forms Vaccination MSP)</label>
     <input type="text" id="forms_url" value="https://forms.office.com/r/Ri3j9V5ZA9" style="font-family: monospace; font-size: 11px;">
   </div>
-  <div class="alert alert-warning" style="margin-top: 8px;">
-    💡 Tant que vous n'avez pas généré le lien pré-rempli, le QR pointe simplement vers le Forms standard. Le bon papier porte alors toutes les infos patient pour saisie rapide IDE (15 secondes).
-  </div>
 </div>
 
-<!-- APERÇU DES BONS -->
 <div class="panel">
   <h2 class="no-print">📄 Aperçu du / des bon(s) à imprimer</h2>
   <div id="bons-container" class="bons-zone">
@@ -282,7 +256,6 @@
   </div>
 </div>
 
-<!-- HISTORIQUE -->
 <div class="panel no-print">
   <h2>📚 Historique des bons générés (<span id="count">0</span>)</h2>
   <div id="history-content">
@@ -294,22 +267,61 @@
   </div>
 </div>
 
-<div class="alert alert-success no-print" style="margin-top: 20px;">
-  <strong>🔐 Confidentialité :</strong> les données saisies restent localement dans votre navigateur (localStorage). Aucune transmission vers Internet hormis l'envoi du QR vers Microsoft Forms (Europe, RGPD). Le bon papier ne contient que les initiales (anonymisation).
-</div>
-
 </div>
 
 <script>
 const STORAGE_KEY = 'msp_voves_bons_vaccination';
 
-// === PRESET VACCINES ===
+// === Conversion nom complet -> initiales ===
+function nomToInitiales(nom) {
+  if (!nom) return '';
+  const titres = /^(M\.|Mme|Mlle|Mr|Dr|Pr|Mme\.|Mr\.|Mlle\.)$/i;
+  const mots = nom.trim().split(/\s+/).filter(m => !titres.test(m));
+  if (mots.length === 0) return '';
+  let inits = '';
+  let nomDone = false;
+  for (const m of mots) {
+    const isMaj = m === m.toUpperCase() && m.length > 1;
+    if (isMaj) { inits += m[0]; }
+    else if (!nomDone && inits.length > 0) { inits += m[0]; nomDone = true; }
+  }
+  return inits.substring(0, 5).toUpperCase();
+}
+
+// === Bouton Coller identité (presse-papiers) ===
+async function collerIdentite() {
+  try {
+    const txt = await navigator.clipboard.readText();
+    if (!txt || txt.length < 3) {
+      alert('Presse-papiers vide ou trop court. Sélectionnez le nom du patient dans Axisanté puis Ctrl+C, puis recliquez ici.');
+      return;
+    }
+    const ligne1 = txt.split(/[\n\r]/)[0].trim();
+    const ini = nomToInitiales(ligne1);
+    if (ini) {
+      document.getElementById('initiales').value = ini;
+      const old = document.getElementById('paste-msg');
+      if (old) old.remove();
+      const banner = document.createElement('div');
+      banner.className = 'alert alert-success no-print';
+      banner.id = 'paste-msg';
+      banner.innerHTML = `<strong>✓ Identité collée :</strong> "${ligne1}" → initiales <strong>${ini}</strong>. Choisissez le vaccin et Ctrl+Enter.`;
+      const panel = document.querySelector('.panel');
+      panel.insertBefore(banner, panel.firstChild);
+      document.getElementById('vaccin').focus();
+    } else {
+      alert('Impossible d\'extraire les initiales depuis : ' + ligne1);
+    }
+  } catch(e) {
+    alert('Accès presse-papiers bloqué par le navigateur. Tapez les initiales à la main.\n\nErreur : ' + e.message);
+  }
+}
+
 function setVaccine(nom, indication) {
   document.getElementById('vaccin').value = nom;
   if (!document.getElementById('indication').value) {
     document.getElementById('indication').value = indication;
   }
-  // Auto voie selon vaccin
   const voie = document.getElementById('voie');
   if (!voie.value) {
     if (nom.includes('ROR') || nom.includes('Zostavax')) voie.value = 'SC';
@@ -317,7 +329,6 @@ function setVaccine(nom, indication) {
   }
 }
 
-// === CALCUL ÂGE ===
 function calcAge(ddn) {
   if (!ddn) return '';
   const d = new Date(ddn);
@@ -327,7 +338,6 @@ function calcAge(ddn) {
   return age;
 }
 
-// === GÉNÉRER URL PRÉ-REMPLIE ===
 function buildPrefilledUrl(data) {
   let url = document.getElementById('forms_url').value || 'https://forms.office.com/r/Ri3j9V5ZA9';
   url = url.replace(/__INITIALES__/g, encodeURIComponent(data.initiales))
@@ -340,9 +350,7 @@ function buildPrefilledUrl(data) {
   return url;
 }
 
-// === GÉNÉRER UN BON ===
 function genererBon() {
-  // Validation
   const data = {
     id: Date.now(),
     initiales: document.getElementById('initiales').value.toUpperCase().trim(),
@@ -364,15 +372,11 @@ function genererBon() {
     return;
   }
 
-  // Stocker
   const history = getHistory();
   history.push(data);
   setHistory(history);
-
-  // Afficher le bon
   renderBon(data);
 
-  // Reset formulaire patient (mais garder MG + date pour saisies suivantes)
   document.getElementById('initiales').value = '';
   document.getElementById('naissance').value = '';
   document.getElementById('sexe').value = '';
@@ -380,13 +384,11 @@ function genererBon() {
   document.getElementById('indication').value = '';
   document.getElementById('lot').value = '';
   document.getElementById('initiales').focus();
-
   document.getElementById('actions-print').style.display = 'flex';
 }
 
 function renderBon(data) {
   const container = document.getElementById('bons-container');
-  // Si état vide, nettoyer
   if (container.querySelector('.empty-state')) container.innerHTML = '';
 
   const age = calcAge(data.naissance);
@@ -397,7 +399,6 @@ function renderBon(data) {
   const dateLimiteFr = dateLimite.toLocaleDateString('fr-FR');
 
   const url = buildPrefilledUrl(data);
-
   const bonId = 'bon-' + data.id;
   const qrId = 'qr-' + data.id;
 
@@ -409,30 +410,25 @@ function renderBon(data) {
         <h1>💉 BON DE VACCINATION</h1>
         <div class="legal">Décret 2023-736 — IDE Asalée habilitée à l'administration</div>
       </div>
-
       <div class="bon-body">
         <div class="bon-info">
           <div class="row"><span class="label">Patient</span><span class="value">${data.initiales}</span></div>
           <div class="row"><span class="label">Né(e) le</span><span class="value">${ddnFr} <span style="font-weight:400; color:#666;">(${age} ans)</span></span></div>
           ${data.sexe ? `<div class="row"><span class="label">Sexe</span><span class="value">${data.sexe}</span></div>` : ''}
-
           <div class="vaccin-box">
             <div class="label">Vaccin à administrer</div>
             <div class="value">${data.vaccin}</div>
             ${data.indication ? `<div style="font-size: 7.5pt; color: #555; margin-top: 1mm;"><strong>Indication :</strong> ${data.indication}</div>` : ''}
           </div>
-
           ${data.lot ? `<div class="row"><span class="label">Lot prévu</span><span class="value" style="font-size: 8.5pt;">${data.lot}</span></div>` : ''}
           ${data.voie ? `<div class="row"><span class="label">Voie</span><span class="value" style="font-size: 8.5pt;">${data.voie}</span></div>` : ''}
           ${data.site ? `<div class="row"><span class="label">Site</span><span class="value" style="font-size: 8.5pt;">${data.site}</span></div>` : ''}
         </div>
-
         <div class="bon-qr">
           <div class="qr-canvas" id="${qrId}"></div>
           <div class="qr-label">📱 SCANNER<br>IDE Asalée</div>
         </div>
       </div>
-
       <div class="bon-footer">
         <div class="ide-section">
           <strong>Prescrit par :</strong> ${data.medecin} — le ${datePrescFr}<br>
@@ -448,19 +444,13 @@ function renderBon(data) {
   `;
 
   container.insertAdjacentHTML('beforeend', bonHtml);
-
-  // Générer le QR
   setTimeout(() => {
     new QRCode(document.getElementById(qrId), {
-      text: url,
-      width: 110,
-      height: 110,
-      colorDark: '#0F6E56',
-      colorLight: '#ffffff',
+      text: url, width: 110, height: 110,
+      colorDark: '#0F6E56', colorLight: '#ffffff',
       correctLevel: QRCode.CorrectLevel.H
     });
   }, 50);
-
   renderHistory();
 }
 
@@ -474,7 +464,6 @@ function resetForm() {
   document.getElementById('date_presc').value = new Date().toISOString().slice(0,10);
 }
 
-// === HISTORIQUE ===
 function getHistory() { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); }
 function setHistory(arr) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(arr));
@@ -495,7 +484,7 @@ function renderHistory() {
       <td>${b.medecin}</td>
       <td>${b.date_presc ? new Date(b.date_presc).toLocaleDateString('fr-FR') : '-'}</td>
       <td style="font-size:11px;">${b.indication || '-'}</td>
-      <td><button class="delete-btn" onclick="reprintBon(${b.id})">🖨 Réimprimer</button></td>
+      <td><button class="delete-btn" onclick="reprintBon(${b.id})">🖨</button></td>
     </tr>`;
   });
   html += '</tbody></table>';
@@ -503,12 +492,9 @@ function renderHistory() {
 }
 
 function reprintBon(id) {
-  const history = getHistory();
-  const bon = history.find(b => b.id === id);
+  const bon = getHistory().find(b => b.id === id);
   if (!bon) return;
-  // Ne pas re-stocker, juste afficher
   renderBon(bon);
-  // Retirer le dernier ajout (puisque renderBon n'ajoute pas à l'historique mais que genererBon le ferait)
   document.getElementById('actions-print').style.display = 'flex';
   window.scrollTo({ top: document.getElementById('bons-container').offsetTop, behavior: 'smooth' });
 }
@@ -534,51 +520,68 @@ function exportCSV() {
   link.click();
 }
 
-// === INIT ===
 window.addEventListener('load', () => {
   document.getElementById('date_presc').value = new Date().toISOString().slice(0,10);
   renderHistory();
 
-  // === EXTRACTION INITIALES depuis nom complet ===
-  // "M. TEN KET KIAN Francois" -> "TKF" (initiales des mots du nom + 1ere lettre prenom)
-  // "DUPONT Jean Marie" -> "DJM"
-  // "Mme MARTIN Sophie" -> "MS"
-  function nomToInitiales(nom) {
-    if (!nom) return '';
-    const titres = /^(M\.|Mme|Mlle|Mr|Dr|Pr|Mme\.|Mr\.|Mlle\.)$/i;
-    const mots = nom.trim().split(/\s+/).filter(m => !titres.test(m));
-    if (mots.length === 0) return '';
-    let inits = '';
-    let nomDone = false;
-    for (const m of mots) {
-      const isMaj = m === m.toUpperCase() && m.length > 1;
-      if (isMaj) { inits += m[0]; }
-      else if (!nomDone && inits.length > 0) { inits += m[0]; nomDone = true; }
-    }
-    return inits.substring(0, 5).toUpperCase();
-  }
-
-  // === Bouton "Coller identite" via presse-papiers ===
-  async function collerIdentite() {
-    try {
-      const txt = await navigator.clipboard.readText();
-      if (!txt || txt.length < 3) {
-        alert('Presse-papiers vide ou trop court. Selectionnez le nom du patient dans Axisante puis Ctrl+C, puis recliquez ici.');
-        return;
-      }
-      // Extraction : on prend la 1ere ligne contenant le nom
-      const ligne1 = txt.split(/[\n\r]/)[0].trim();
-      const ini = nomToInitiales(ligne1);
+  // === Lecture des paramètres URL (pont Axisante) ===
+  const params = new URLSearchParams(window.location.search);
+  const map = {
+    'ini': 'initiales',
+    'initiales': 'initiales',
+    'ddn': 'naissance',
+    'naissance': 'naissance',
+    'datenaissance': 'naissance',
+    'sexe': 'sexe',
+    'vaccin': 'vaccin',
+    'indication': 'indication',
+    'ald': 'indication',
+    'lot': 'lot',
+    'voie': 'voie',
+    'site': 'site',
+    'mt': 'medecin',
+    'medecin': 'medecin',
+    'medecintraitant': 'medecin',
+    'date': 'date_presc',
+    'datepresc': 'date_presc'
+  };
+  let preremplis = 0;
+  params.forEach((value, key) => {
+    const lkey = key.toLowerCase();
+    if (lkey === 'nom' && value) {
+      const ini = nomToInitiales(value);
       if (ini) {
         document.getElementById('initiales').value = ini;
-        const banner = document.createElement('div');
-        banner.className = 'alert alert-success no-print';
-        banner.style.cssText = 'margin: 8px 0; font-size: 13px;';
-        banner.innerHTML = `<strong>✓ Identite collee :</strong> "${ligne1}" -> initiales <strong>${ini}</strong>. Choisissez le vaccin et Ctrl+Enter.`;
-        const old = document.getElementById('paste-msg');
-        if (old) old.remove();
-        banner.id = 'paste-msg';
-        document.querySelector('.panel').insertBefore(banner, document.querySelector('.panel').firstChild);
-        document.getElementById('vaccin').focus();
-      } else {
-  
+        preremplis++;
+      }
+      return;
+    }
+    const targetId = map[lkey];
+    if (targetId) {
+      const el = document.getElementById(targetId);
+      if (el && value) { el.value = value; preremplis++; }
+    }
+  });
+
+  if (preremplis > 0) {
+    const banner = document.createElement('div');
+    banner.className = 'alert alert-success no-print';
+    banner.style.cssText = 'margin: 14px 0; font-size: 14px;';
+    banner.innerHTML = `<strong>✓ Pré-rempli depuis Axisanté :</strong> ${preremplis} champ(s) auto-rempli(s). Vérifiez, choisissez le vaccin et cliquez « Générer le bon » (Ctrl+Enter).`;
+    const panel = document.querySelector('.panel');
+    panel.insertBefore(banner, panel.firstChild);
+    document.getElementById('vaccin').focus();
+  } else {
+    document.getElementById('initiales').focus();
+  }
+
+  document.addEventListener('keydown', (e) => {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+      e.preventDefault();
+      genererBon();
+    }
+  });
+});
+</script>
+</body>
+</html>
